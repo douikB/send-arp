@@ -28,3 +28,30 @@ std::string Modules::getMACAddress(const std::string& interface) {
 
     return std::string(buf);
 }
+
+std::string Modules::getInterfaceIP(const std::string& interfaceName) {
+    struct ifaddrs* ifAddrStruct = NULL;
+    struct ifaddrs* ifa = NULL;
+    void* tmpAddrPtr = NULL;
+    std::string interfaceIP = "";
+
+    getifaddrs(&ifAddrStruct);
+
+    for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET) { // IPv4 주소
+            if (interfaceName == ifa->ifa_name) {
+                tmpAddrPtr = &((struct sockaddr_in*)ifa->ifa_addr)->sin_addr;
+                char addressBuffer[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+                interfaceIP = addressBuffer;
+                break;
+            }
+        }
+    }
+
+    if (ifAddrStruct != NULL) freeifaddrs(ifAddrStruct);
+    return interfaceIP;
+}
